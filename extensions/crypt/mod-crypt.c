@@ -30,6 +30,7 @@
 //
 
 #include "mbedtls/rsa.h"
+#include "mbedtls/ecdsa.h"
 
 // mbedTLS has separate functions for each message digest (SHA256, MD5, etc)
 // and each streaming cipher (RC4, AES...) which you would have to link to
@@ -408,6 +409,58 @@ REBNATIVE(rc4_stream)
         rebJumps ("fail", error, rebEND);
 
     return rebVoid();
+}
+
+
+//
+//  export ecdsa: native [
+//
+//  {Work in progress for supporting ECDSA}
+//
+//  ]
+//
+REBNATIVE(ecdsa)
+//
+// !!! Some servers will uniquely support ECDSA as well as require CURVE25519.
+// This is a fairly esoteric choice at time of writing, but it's something
+// that should be possible to handle.  This is a beginning step to linking
+// in the ECDSA code.
+{
+    mbedtls_ecdsa_context ctx;
+    mbedtls_ecdsa_init(&ctx);
+
+    const mbedtls_ecp_curve_info *curve_info
+        = mbedtls_ecp_curve_info_from_grp_id(MBEDTLS_ECP_DP_CURVE25519);
+
+    size_t sig_len;
+    unsigned char tmp[200];
+
+    memset(buf, 0x2A, sizeof(buf));
+    strcpy((char *)buf, "hello world");  //just fill with something other than 0x2A
+
+    REBVAL *error = nullptr;
+    REBVAL *result = nullptr;
+
+    IF_NOT_0(cleanup, error, mbedtls_ecdsa_genkey(
+        &ctx,
+        curve_info->grp_id,
+        &get_random,
+        nullptr
+    ));
+
+    ctx.Q
+    int ret_write_sign = mbedtls_ecdsa_write_signature(&ecdsa, MBEDTLS_MD_SHA256, buf, curve_info->bit_size, tmp, &sig_len, myrand, NULL);
+
+
+printf("ret_genkey = %d\n", ret_genkey);
+printf("ret_write_sign = %d\n", ret_write_sign);
+
+ecp_clear_precomputed(&ecdsa.grp);
+
+int ret_verify = mbedtls_ecdsa_read_signature(&ecdsa, buf, curve_info->bit_size, tmp, sig_len);
+  cleanup:
+    mbedtls_ecdsa_free(&ecdsa);
+
 }
 
 
